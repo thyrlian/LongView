@@ -8,6 +8,9 @@ A unified, scrollable one-page dashboard app for managers to efficiently review 
   <strong>一屏阅尽百表事，龙阅洞察千端理</strong><br>
   <em>One screen to review a hundred reports, LongView to uncover a thousand threads.</em>
 </p>
+<p align="center">
+  <img src="assets/banner.png" alt="LongView Banner" width="60%">
+</p>
 
 The name **LongView** carries layered meaning:
 
