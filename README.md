@@ -21,6 +21,24 @@ The name **LongView** carries layered meaning:
 Together, **LongView** reflects both the **form** and the **purpose** of the app:
 a unified, scrollable interface that empowers managers to comprehensively read, review, and reason through complex reports across multiple domains — just like a modern-day dragon reviewing the affairs of their realm.
 
+## HOWTO
+
+### Development Environment
+
+To set up the development environment and build the application:
+
+1. Build the Docker development image:
+```bash
+docker build -t qt6-dev .
+```
+
+2. Build the application using the provided script:
+```bash
+./build.sh
+```
+
+The compiled application will be available at `./build/bin/LongView`.
+
 ## License
 
 Copyright © 2025 [Jing Li](https://github.com/thyrlian)
