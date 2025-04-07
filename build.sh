@@ -3,7 +3,7 @@
 # Ensure script runs in project root directory
 PROJECT_DIR=$(pwd)
 
-echo "🔧 Building LongView app..."
+echo "🔧 Building Long View app..."
 
 # Create build command
 BUILD_CMD="cd /workspace && mkdir -p build && cd build && cmake .. && make -j4"
