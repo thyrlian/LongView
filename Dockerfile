@@ -70,5 +70,5 @@ WORKDIR /app
 ENV DISPLAY=:0
 ENV QT_X11_NO_MITSHM=1
 
-# Default command - we'll mount the script instead of copying it
-CMD ["/bin/bash", "/app/docker-build.sh"]
+# Default command to start a bash shell
+CMD ["/bin/bash"]
