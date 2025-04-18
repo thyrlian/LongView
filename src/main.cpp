@@ -128,11 +128,11 @@ void setupAppDesktopEntry() {
     // Get paths
     QString appImagePath(appImage);
     QString appDir = QCoreApplication::applicationDirPath();
-    QString appIconPath = appDir + "/../share/icons/hicolor/512x512/apps/longview.png";
-    QString appDesktopPath = appDir + "/../share/applications/longview.desktop";
+    QString appIconPath = appDir + "/../icons/longview.png";
+    QString appDesktopPath = appDir + "/../applications/longview.desktop";
     const QString USER_LOCAL_DATA_DIR = QDir::homePath() + "/.local/share";
     QString userDesktopFilePath = USER_LOCAL_DATA_DIR + "/applications/longview.desktop";
-    QString userIconDir = USER_LOCAL_DATA_DIR + "/icons/hicolor/512x512/apps";
+    QString userIconDir = USER_LOCAL_DATA_DIR + "/icons";
     QString userIconPath = userIconDir + "/longview.png";
     
     // Ensure icon directory exists

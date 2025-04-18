@@ -65,14 +65,13 @@ case "$PLATFORM" in
                 APPDIR=AppDir
                 rm -rf \$APPDIR
                 mkdir -p \$APPDIR/usr/bin
-                mkdir -p \$APPDIR/usr/share/applications
-                mkdir -p \$APPDIR/usr/share/icons/hicolor/512x512/apps
+                mkdir -p \$APPDIR/usr/applications
+                mkdir -p \$APPDIR/usr/icons
                 
                 echo '--- Copying binary and assets ---'
                 cp './${APP_NAME}' \$APPDIR/usr/bin/
-                cp /app/src/assets/desktop/longview.desktop \$APPDIR/usr/share/applications/
-                cp /app/src/assets/icons/Linux/icon.png \$APPDIR/usr/share/icons/hicolor/512x512/apps/longview.png
-                
+                cp /app/src/assets/icons/Linux/icon.png \$APPDIR/usr/icons/longview.png
+                cp /app/src/assets/desktop/longview.desktop \$APPDIR/usr/applications/longview.desktop
                 # Create root .desktop file (required by some AppImage tools)
                 cp /app/src/assets/desktop/longview.desktop \$APPDIR/longview.desktop
                 
@@ -82,7 +81,7 @@ case "$PLATFORM" in
                 
                 # Modify .desktop files to use AppRun
                 sed -i 's|Exec=.*|Exec=AppRun|g' \$APPDIR/longview.desktop
-                sed -i 's|Exec=.*|Exec=AppRun|g' \$APPDIR/usr/share/applications/longview.desktop
+                sed -i 's|Exec=.*|Exec=AppRun|g' \$APPDIR/usr/applications/longview.desktop
                 
                 # Create AppRun script
                 cat > \$APPDIR/AppRun << 'EOFAPPRUN'
@@ -90,7 +89,7 @@ case "$PLATFORM" in
 HERE=\$(dirname \$(readlink -f \${0}))
 export PATH=\${HERE}/usr/bin:\${PATH}
 export LD_LIBRARY_PATH=\${HERE}/usr/lib:\${LD_LIBRARY_PATH}
-export XDG_DATA_DIRS=\${HERE}/usr/share:\${XDG_DATA_DIRS}
+export XDG_DATA_DIRS=\${HERE}/usr:\${XDG_DATA_DIRS}
 \${HERE}/usr/bin/${APP_NAME} \"\$@\"
 EOFAPPRUN
                 chmod +x \$APPDIR/AppRun
