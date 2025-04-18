@@ -52,3 +52,11 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# Build scripts should not be ignored
+!build-*.sh
+!build.sh
+
+# Build artifacts and intermediate files
+/build/
+/dist/
