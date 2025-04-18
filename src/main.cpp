@@ -8,6 +8,7 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QProcess>
 
 // Application settings
 const QString APP_TITLE = "Long View";
@@ -152,6 +153,28 @@ void setupAppDesktopEntry() {
             qDebug() << "Desktop file copied from:" << appDesktopPath << "to:" << userDesktopFilePath;
             // Update Icon fields in the new desktop file
             updateDesktopField(userDesktopFilePath, "Icon", userIconPath);
+            
+            // Force system to reload desktop files and refresh icon cache
+            // Only do this on first run (when desktop file doesn't exist)
+            qDebug() << "First run detected - refreshing desktop database and icon cache";
+            
+            // Update desktop database
+            QProcess::execute("update-desktop-database", QStringList() << QDir::homePath() + "/.local/share/applications");
+            
+            // Ensure icon directories exist for cache update
+            QDir().mkpath(QDir::homePath() + "/.local/share/icons/hicolor");
+            
+            // Refresh icon cache - try different commands based on available tools
+            QProcess::execute("gtk-update-icon-cache", QStringList() << "-f" << "-t" << QDir::homePath() + "/.local/share/icons");
+            QProcess::execute("xdg-icon-resource", QStringList() << "forceupdate");
+            
+            // Notify desktop environment of changes - works for many desktop environments
+            QProcess::execute("dbus-send", QStringList() 
+                << "--session" 
+                << "--dest=org.freedesktop.DBus" 
+                << "--type=method_call"
+                << "/org/freedesktop/DBus" 
+                << "org.freedesktop.DBus.ReloadConfig");
         }
     }
     // Whether desktop file is newly created or exists already, check and update Exec field if necessary
