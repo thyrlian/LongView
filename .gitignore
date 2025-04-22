@@ -60,3 +60,6 @@ compile_commands.json
 # Build artifacts and intermediate files
 /build/
 /dist/
+
+# SquashFS root files from AppImage
+/squashfs-root/*

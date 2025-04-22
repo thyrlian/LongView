@@ -8,6 +8,10 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 set(PROJECT_SOURCES
     main.cpp
+    windowutils.h
+    windowutils.cpp
+    appintegration.h
+    appintegration.cpp
 )
 
 qt_add_executable(${PROJECT_NAME}
