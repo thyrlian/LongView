@@ -4,10 +4,12 @@
 set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration ---
-DOCKER_IMAGE="qt6-dev" # Name of your Qt development Docker image
+DOCKER_IMAGE_LINUX="qt6-dev-ubuntu" # Name of your Qt development Docker image for Linux
 BUILD_DIR="build"
 DIST_DIR="dist"
 APP_NAME="LongView"
+ORG_DOMAIN="com.basgeekball"
+APP_ID="${ORG_DOMAIN}.${APP_NAME}"
 APP_VERSION="0.1" # Example version
 
 # --- Helper Functions ---
@@ -51,7 +53,7 @@ case "$PLATFORM" in
             -v "${PWD}:/app" \
             -v "${HOST_DIST_DIR}:/output" \
             -w /app \
-            ${DOCKER_IMAGE} /bin/bash -c "
+            ${DOCKER_IMAGE_LINUX} /bin/bash -c "
                 set -e
                 echo '--- Configuring CMake ---'
                 mkdir -p '${BUILD_DIR}/linux'
@@ -122,7 +124,110 @@ EOFAPPRUN
         
     macos)
         clean_platform macos
-        echo "macOS build not implemented yet"
+        
+        # Define directories using absolute paths for clarity
+        HOST_DIST_DIR="${PWD}/${DIST_DIR}/macos"
+        HOST_BUILD_DIR="${PWD}/${BUILD_DIR}/macos"
+        
+        echo "--- Starting build for ${PLATFORM} using native Qt ---"
+        echo "Host dist directory: ${HOST_DIST_DIR}"
+        
+        # This approach uses Qt's native tools rather than cross-compiling
+        mkdir -p "${HOST_BUILD_DIR}"
+        cd "${HOST_BUILD_DIR}"
+        
+        # Use native macOS tools and Qt
+        echo "Using native Qt for macOS build..."
+        
+        # Get correct source directory path
+        SRC_DIR="${PWD}/../../src"
+        echo "Source directory: ${SRC_DIR}"
+        
+        # Run CMake with absolute path to source
+        cmake -DCMAKE_BUILD_TYPE=Release "${SRC_DIR}"
+        
+        # Build the application
+        echo "Building application..."
+        make -j4
+        
+        # Create app bundle - CMake already creates the basic structure
+        echo "Creating macOS app bundle..."
+        
+        # For macOS, CMake builds directly into the .app directory
+        if [ -f "LongView.app/Contents/MacOS/LongView" ]; then
+            echo "Executable found in app bundle, using that"
+            APP_BUNDLE_DIR="LongView.app"
+        else
+            echo "Error: Executable not found in expected location"
+            echo "Looking for executable..."
+            find . -name "LongView" -type f
+            exit 1
+        fi
+        
+        # Create Info.plist if not already created by CMake
+        if [ ! -f "${APP_BUNDLE_DIR}/Contents/Info.plist" ]; then
+            echo "Creating Info.plist..."
+            cat > "${APP_BUNDLE_DIR}/Contents/Info.plist" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>${APP_NAME}</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIdentifier</key>
+    <string>${APP_ID}</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>${APP_NAME}</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>${APP_VERSION}</string>
+    <key>CFBundleVersion</key>
+    <string>${APP_VERSION}</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
+EOF
+        else
+            echo "Info.plist already exists"
+        fi
+        
+        # Ensure Resources directory exists
+        mkdir -p "${APP_BUNDLE_DIR}/Contents/Resources"
+
+        # Look for icon file
+        ICON_PATH="${SRC_DIR}/assets/icons/macOS/icon.icns"
+        if [ -f "${ICON_PATH}" ]; then
+            echo "Copying app icon from ${ICON_PATH}..."
+            cp "${ICON_PATH}" "${APP_BUNDLE_DIR}/Contents/Resources/AppIcon.icns"
+        else
+            echo "Warning: Icon file not found at ${ICON_PATH}"
+            # Create a simple icon placeholder
+            touch "${APP_BUNDLE_DIR}/Contents/Resources/AppIcon.icns"
+        fi
+        
+        # Copy app bundle to dist directory - use absolute paths
+        echo "Copying app bundle to distribution directory..."
+        mkdir -p "${HOST_DIST_DIR}/app"
+        
+        # Remove existing app bundle
+        rm -rf "${HOST_DIST_DIR}/app/${APP_NAME}.app"
+        
+        cp -R "${APP_BUNDLE_DIR}" "${HOST_DIST_DIR}/app/"
+        
+        echo "Checking distribution directory contents..."
+        ls -la "${HOST_DIST_DIR}/app/" || echo "Directory not found or empty"
+        
+        # Return to original directory
+        cd "${PWD}/../../"
+        
+        echo "--- macOS build completed ---"
+        echo "App bundle available at: ${DIST_DIR}/macos/app/${APP_NAME}.app"
         ;;
         
     *)

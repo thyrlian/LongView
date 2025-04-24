@@ -5,13 +5,10 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QStandardPaths>
-
-#ifdef Q_OS_LINUX
 #include <QProcess>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QTextStream>
-#endif
 
 namespace {
     /**
@@ -24,6 +21,7 @@ namespace {
                            const QString& fieldName, 
                            const QString& fieldValue)
     {
+#ifdef Q_OS_LINUX
         QFile file(desktopFilePath);
         if (file.open(QIODevice::ReadWrite | QIODevice::Text)) {
             QString content = file.readAll();
@@ -55,6 +53,12 @@ namespace {
         } else {
             qDebug() << "Failed to open desktop file for reading:" << desktopFilePath;
         }
+#else
+        // Non-Linux platforms - do nothing
+        Q_UNUSED(desktopFilePath);
+        Q_UNUSED(fieldName);
+        Q_UNUSED(fieldValue);
+#endif
     }
 
     /**
@@ -62,6 +66,7 @@ namespace {
      */
     void refreshSystemCache()
     {
+#ifdef Q_OS_LINUX
         // Update desktop database
         QProcess::execute("update-desktop-database", QStringList() << QDir::homePath() + "/.local/share/applications");
         
@@ -79,6 +84,7 @@ namespace {
             << "--type=method_call"
             << "/org/freedesktop/DBus" 
             << "org.freedesktop.DBus.ReloadConfig");
+#endif
     }
 }
 
