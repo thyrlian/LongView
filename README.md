@@ -29,15 +29,67 @@ To set up the development environment and build the application:
 
 1. Build the Docker development image:
 ```bash
-docker build -t qt6-dev .
+# For Linux build
+docker build -t qt6-dev-ubuntu -f docker/ubuntu/Dockerfile docker/ubuntu
+
+# For macOS cross-compilation (experimental)
+docker build -t qt6-dev-macos-cross -f docker/macos/Dockerfile docker/macos/
 ```
 
 2. Build the application using the provided script:
 ```bash
-./build.sh
+# Build for Linux (in a Docker container)
+./build.sh --target=linux
+
+# Build for macOS (in macOS native environment - RECOMMENDED)
+./build.sh --target=macos
+
+# Build with cleaning previous build artifacts
+./build.sh --target=<platform> --clean
 ```
 
-The compiled application will be available at `./build/bin/LongView`.
+The compiled application will be available in the platform-specific directory:
+- Linux: `dist/linux/LongView-0.1-x86_64.AppImage`
+- macOS: `dist/macos/app/LongView.app`
+
+### Experimental: macOS Cross-Compilation from Linux
+
+> **Note**: This method is experimental and may not produce a perfect build. It's strongly recommended to use the native macOS build script above when possible.
+
+To cross-compile for macOS from Linux:
+
+1. Run the macOS cross-compilation Docker container:
+```bash
+docker run -it --rm -v $(pwd):/app qt6-dev-macos-cross /bin/bash
+```
+
+2. Inside the container, build the application:
+```bash
+# Clean previous build artifacts
+rm -rf build
+
+# Configure with CMake for macOS target
+cmake -S . -B build \
+  -DCMAKE_SYSTEM_NAME=Darwin \
+  -DCMAKE_C_COMPILER=arm64-apple-darwin20.4-clang \
+  -DCMAKE_CXX_COMPILER=arm64-apple-darwin20.4-clang++ \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+  -DOPENGL_INCLUDE_DIR=/usr/include \
+  -DOPENGL_gl_LIBRARY=/usr/lib/aarch64-linux-gnu/libGL.so \
+  -DCMAKE_PREFIX_PATH=/opt/Qt6/mac/6.5.0/macos
+
+# Build the application
+cmake --build build --config Release
+```
+
+3. After cross-compilation, finalize on a macOS machine:
+```bash
+# Package Qt dependencies and sign the app
+"$(which macdeployqt)" build/bin/LongView.app -verbose=2 && codesign --deep --force --verbose --sign - build/bin/LongView.app
+```
+
+The macOS app bundle will be available at `build/bin/LongView.app`
 
 ## License
 
