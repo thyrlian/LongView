@@ -14,8 +14,11 @@ APP_VERSION="0.1" # Example version
 
 # --- Helper Functions ---
 print_usage() {
-    echo "Usage: $0 <platform>"
+    echo "Usage: $0 [options] <platform>"
     echo "  platform: linux, windows, macos"
+    echo "Options:"
+    echo "  --target=<platform>  Alternative way to specify platform"
+    echo "  --clean              Clean build directories before building"
     exit 1
 }
 
@@ -29,17 +32,49 @@ clean_platform() {
 }
 
 # --- Argument Parsing ---
-if [ "$#" -ne 1 ]; then
+PLATFORM=""
+CLEAN_BUILD=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --target=*)
+            PLATFORM="${1#*=}"
+            shift
+            ;;
+        --clean)
+            CLEAN_BUILD=true
+            shift
+            ;;
+        linux|windows|macos)
+            PLATFORM="$1"
+            shift
+            ;;
+        -h|--help)
+            print_usage
+            ;;
+        *)
+            echo "Error: Unknown parameter '$1'"
+            print_usage
+            ;;
+    esac
+done
+
+# Check if a platform was specified
+if [ -z "$PLATFORM" ]; then
+    echo "Error: No platform specified"
     print_usage
 fi
 
-PLATFORM=$1
 CMAKE_PLATFORM_ARGS="" # Platform specific CMake arguments (toolchains, etc.)
 
 # --- Platform Specific Setup ---
 case "$PLATFORM" in
     linux)
-        clean_platform linux
+        # Apply clean if requested
+        if [ "$CLEAN_BUILD" = true ]; then
+            clean_platform linux
+        fi
         
         # Create host directories that will be mapped to Docker
         HOST_DIST_DIR="${PWD}/${DIST_DIR}/linux"
@@ -118,12 +153,19 @@ EOFAPPRUN
         ;;
         
     windows)
-        clean_platform windows
+        # Apply clean if requested
+        if [ "$CLEAN_BUILD" = true ]; then
+            clean_platform windows
+        fi
+        
         echo "Windows build not implemented yet"
         ;;
         
     macos)
-        clean_platform macos
+        # Apply clean if requested
+        if [ "$CLEAN_BUILD" = true ]; then
+            clean_platform macos
+        fi
         
         # Define directories using absolute paths for clarity
         HOST_DIST_DIR="${PWD}/${DIST_DIR}/macos"

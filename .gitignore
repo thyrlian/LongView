@@ -63,3 +63,6 @@ compile_commands.json
 
 # SquashFS root files from AppImage
 /squashfs-root/*
+
+# macOS SDK
+*MacOSX*.sdk*.tar.xz
