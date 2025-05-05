@@ -109,7 +109,7 @@ ENV QT_SOURCE_DIR=/opt/qt/qt-everywhere-src-${QT_VERSION}
 # Copy toolchain file into the container
 COPY toolchain-mingw64.cmake /opt/toolchain-mingw64.cmake
 
-# Build host Qt (used for host tools)
+# Build and install host Qt (used for host tools)
 RUN cd /opt/qt && \
     mkdir -p build-host && cd build-host && \
     cmake ../qt-everywhere-src-${QT_VERSION} \
@@ -118,7 +118,19 @@ RUN cd /opt/qt && \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
       -DQT_BUILD_EXAMPLES=OFF \
-      -DQT_BUILD_TESTS=OFF
+      -DQT_BUILD_TESTS=OFF && \
+    cmake --build . --parallel && \
+    cmake --install . && \
+    [ -x /opt/qt-host/bin/qmake6 ] && \
+    [ -x /opt/qt-host/bin/qtpaths6 ] && \
+    [ -f /opt/qt-host/lib/cmake/Qt6Core/Qt6CoreConfig.cmake ] && \
+    touch /opt/qt-host/.qt-host-built && \
+    cd / && \
+    rm -rf /opt/qt/build-host && \
+    rm -rf /opt/qt/qt-everywhere-src-${QT_VERSION}
+
+# Set the Qt host tools path
+ENV PATH="$PATH:/opt/qt-host/bin"
 
 # Set the working directory
 WORKDIR /app
