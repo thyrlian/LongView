@@ -126,11 +126,24 @@ RUN cd /opt/qt && \
     [ -f /opt/qt-host/lib/cmake/Qt6Core/Qt6CoreConfig.cmake ] && \
     touch /opt/qt-host/.qt-host-built && \
     cd / && \
-    rm -rf /opt/qt/build-host && \
-    rm -rf /opt/qt/qt-everywhere-src-${QT_VERSION}
+    rm -rf /opt/qt/build-host
 
 # Set the Qt host tools path
 ENV PATH="$PATH:/opt/qt-host/bin"
+
+# Prepare and configure target Qt (Windows)
+RUN rm -rf /opt/qt/qt-everywhere-src-${QT_VERSION}/qtactiveqt && \
+    mkdir -p /opt/qt/build-win && cd /opt/qt/build-win && \
+    cmake ${QT_SOURCE_DIR} \
+      -G Ninja \
+      -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-mingw64.cmake \
+      -DCMAKE_INSTALL_PREFIX=/opt/qt-win64 \
+      -DQT_HOST_PATH=/opt/qt-host \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DQT_BUILD_EXAMPLES=OFF \
+      -DQT_BUILD_TESTS=OFF \
+      -DQT_FEATURE_webengine=ON \
+      -Wno-dev
 
 # Set the working directory
 WORKDIR /app
