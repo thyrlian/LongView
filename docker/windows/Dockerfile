@@ -131,10 +131,13 @@ RUN cd /opt/qt && \
 # Set the Qt host tools path
 ENV PATH="$PATH:/opt/qt-host/bin"
 
-# Prepare and configure target Qt (Windows)
-RUN rm -rf /opt/qt/qt-everywhere-src-${QT_VERSION}/qtactiveqt && \
+# Build and install target Qt for Windows (excluding some modules temporarily)
+RUN mkdir -p /opt/qt/unused-modules && \
+    mv ${QT_SOURCE_DIR}/qtactiveqt /opt/qt/unused-modules/qtactiveqt && \
+    mv ${QT_SOURCE_DIR}/qtquick3dphysics /opt/qt/unused-modules/qtquick3dphysics && \
+    mv ${QT_SOURCE_DIR}/qtwebengine /opt/qt/unused-modules/qtwebengine && \
     mkdir -p /opt/qt/build-win && cd /opt/qt/build-win && \
-    cmake ${QT_SOURCE_DIR} \
+    cmake $QT_SOURCE_DIR \
       -G Ninja \
       -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-mingw64.cmake \
       -DCMAKE_INSTALL_PREFIX=/opt/qt-win64 \
@@ -142,8 +145,14 @@ RUN rm -rf /opt/qt/qt-everywhere-src-${QT_VERSION}/qtactiveqt && \
       -DCMAKE_BUILD_TYPE=Release \
       -DQT_BUILD_EXAMPLES=OFF \
       -DQT_BUILD_TESTS=OFF \
-      -DQT_FEATURE_webengine=ON \
-      -Wno-dev
+      -DSKIP_qtactiveqt=ON \
+      -DSKIP_qtquick3dphysics=ON \
+      -DSKIP_qtwebengine=ON \
+      -Wno-dev && \
+    cmake --build . --parallel && \
+    cmake --install . && \
+    ls /opt/qt-win64/lib/cmake/Qt6/Qt6Config.cmake && \
+    ls /opt/qt-win64/bin/qmake6
 
 # Set the working directory
 WORKDIR /app
