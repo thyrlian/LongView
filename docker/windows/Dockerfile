@@ -25,8 +25,8 @@ RUN apt-get update && \
     curl \
     wget \
     unzip \
-    ca-certificates \
-    && apt-get clean && \
+    ca-certificates && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Qt6 host libraries for native build tools (e.g. moc, rcc)
@@ -93,6 +93,8 @@ RUN apt-get update && \
 # Set the Qt version
 ENV QT_BRANCH=6.9
 ENV QT_VERSION=6.9.0
+ENV QT_SOURCE_DIR=/opt/qt/qt-everywhere-src-${QT_VERSION}
+ENV CROSS_PREFIX=x86_64-w64-mingw32
 
 # Download and unzip the Qt6 Windows source package
 RUN mkdir -p /opt/qt && \
@@ -100,19 +102,12 @@ RUN mkdir -p /opt/qt && \
     unzip /opt/qt/qt-win64.zip -d /opt/qt && \
     rm /opt/qt/qt-win64.zip
 
-# Set the cross-compilation toolchain prefix
-ENV CROSS_PREFIX=x86_64-w64-mingw32
-
-# Set the Qt source directory
-ENV QT_SOURCE_DIR=/opt/qt/qt-everywhere-src-${QT_VERSION}
-
-# Copy toolchain file into the container
+# Copy toolchain config
 COPY toolchain-mingw64.cmake /opt/toolchain-mingw64.cmake
 
-# Build and install host Qt (used for host tools)
-RUN cd /opt/qt && \
-    mkdir -p build-host && cd build-host && \
-    cmake ../qt-everywhere-src-${QT_VERSION} \
+# Build host Qt
+RUN mkdir -p /opt/qt/build-host && cd /opt/qt/build-host && \
+    cmake ${QT_SOURCE_DIR} \
       -G Ninja \
       -DCMAKE_INSTALL_PREFIX=/opt/qt-host \
       -DCMAKE_BUILD_TYPE=Release \
@@ -128,14 +123,12 @@ RUN cd /opt/qt && \
     cd / && \
     rm -rf /opt/qt/build-host
 
-# Set the Qt host tools path
 ENV PATH="$PATH:/opt/qt-host/bin"
 
-# Build and install target Qt for Windows (excluding some modules temporarily)
-RUN mkdir -p /opt/qt/unused-modules && \
-    mv ${QT_SOURCE_DIR}/qtactiveqt /opt/qt/unused-modules/qtactiveqt && \
-    mv ${QT_SOURCE_DIR}/qtquick3dphysics /opt/qt/unused-modules/qtquick3dphysics && \
-    mv ${QT_SOURCE_DIR}/qtwebengine /opt/qt/unused-modules/qtwebengine && \
+# Build and install target Qt for Windows (excluding some modules)
+RUN rm -rf ${QT_SOURCE_DIR}/qtactiveqt \
+           ${QT_SOURCE_DIR}/qtquick3dphysics \
+           ${QT_SOURCE_DIR}/qtwebengine && \
     mkdir -p /opt/qt/build-win && cd /opt/qt/build-win && \
     cmake $QT_SOURCE_DIR \
       -G Ninja \
