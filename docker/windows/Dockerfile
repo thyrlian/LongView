@@ -126,6 +126,26 @@ RUN mkdir -p /opt/qt/build-host && cd /opt/qt/build-host && \
 ENV PATH="$PATH:/opt/qt-host/bin"
 
 # Build and install target Qt for Windows (excluding some modules)
+# --------------------------------------------------------------------
+# ⚠️ Current approach skips compiling certain Qt modules:
+#    - qtactiveqt
+#    - qtquick3dphysics
+#    - qtwebengine
+#
+# ❓ Reason:
+#    These modules either require Windows-only SDKs,
+#    depend on MSVC-specific features (e.g., COM support, WebEngine with Chromium),
+#    or are not supported under MinGW cross-compilation.
+#
+# 💡 Recommendation for future:
+#    If you need these modules, build Qt on a native Windows machine with MSVC.
+#    After building, copy the resulting Qt installation into this Docker image.
+#
+#    QtWebEngine especially depends on:
+#      - MSVC compiler (Chromium does not support MinGW)
+#      - Windows SDK (10.0.26100+)
+#      - Proprietary tools such as gn, ninja, Python, etc., in a tightly controlled setup.
+# --------------------------------------------------------------------
 RUN rm -rf ${QT_SOURCE_DIR}/qtactiveqt \
            ${QT_SOURCE_DIR}/qtquick3dphysics \
            ${QT_SOURCE_DIR}/qtwebengine && \
