@@ -147,6 +147,13 @@ RUN rm -rf ${QT_SOURCE_DIR}/qtactiveqt \
     ls /opt/qt-win64/lib/cmake/Qt6/Qt6Config.cmake && \
     ls /opt/qt-win64/bin/qmake6
 
+# Clean up build directories and Qt source
+RUN rm -rf /opt/qt/build-* ${QT_SOURCE_DIR}
+
+# Copy helper script for packaging
+COPY package-dlls.sh /usr/local/bin/package-dlls.sh
+RUN chmod +x /usr/local/bin/package-dlls.sh
+
 # Set the working directory
 WORKDIR /app
 
