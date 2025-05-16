@@ -47,6 +47,9 @@ docker build -t qt6-dev-windows-cross -f docker/windows/Dockerfile docker/window
 # Build for macOS (in macOS native environment - RECOMMENDED)
 ./build.sh --target=macos
 
+# Build for Windows (in Windows native environment with Qt + MSVC - RECOMMENDED)
+./build.sh --target=windows
+
 # Build with cleaning previous build artifacts
 ./build.sh --target=<platform> --clean
 ```
@@ -54,6 +57,7 @@ docker build -t qt6-dev-windows-cross -f docker/windows/Dockerfile docker/window
 The compiled application will be available in the platform-specific directory:
 - Linux: `dist/linux/LongView-0.1-x86_64.AppImage`
 - macOS: `dist/macos/app/LongView.app`
+- Windows: `dist/windows/LongView.exe`
 
 ### Experimental: macOS Cross-Compilation from Linux
 

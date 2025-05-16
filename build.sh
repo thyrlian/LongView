@@ -157,8 +157,31 @@ EOFAPPRUN
         if [ "$CLEAN_BUILD" = true ]; then
             clean_platform windows
         fi
-        
-        echo "Windows build not implemented yet"
+
+        echo "--- Starting native Windows build ---"
+
+        SRC_DIR="${PWD}/src"
+        BUILD_SUBDIR="${BUILD_DIR}/windows"
+        DIST_SUBDIR="${DIST_DIR}/windows"
+
+        mkdir -p "$BUILD_SUBDIR"
+        mkdir -p "$DIST_SUBDIR"
+
+        cd "$BUILD_SUBDIR"
+
+        echo "--- Configuring CMake with MSVC or local Qt ---"
+        cmake "$SRC_DIR" -DCMAKE_BUILD_TYPE=Release
+
+        echo "--- Building application ---"
+        cmake --build . --parallel
+
+        echo "--- Copying build artifacts ---"
+        cp "${APP_NAME}.exe" "$DIST_SUBDIR/" || echo "Warning: EXE not found"
+
+        cd - > /dev/null
+
+        echo "--- Windows build completed ---"
+        echo "Binary available at: ${DIST_SUBDIR}/${APP_NAME}.exe"
         ;;
         
     macos)
