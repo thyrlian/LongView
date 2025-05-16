@@ -34,6 +34,9 @@ docker build -t qt6-dev-ubuntu -f docker/ubuntu/Dockerfile docker/ubuntu
 
 # For macOS cross-compilation (experimental)
 docker build -t qt6-dev-macos-cross -f docker/macos/Dockerfile docker/macos/
+
+# For Windows cross-compilation (experimental)
+docker build -t qt6-dev-windows-cross -f docker/windows/Dockerfile docker/windows/
 ```
 
 2. Build the application using the provided script:
@@ -66,7 +69,7 @@ docker run -it --rm -v $(pwd):/app qt6-dev-macos-cross /bin/bash
 2. Inside the container, build the application:
 ```bash
 # Clean previous build artifacts
-rm -rf build
+rm -rf build && mkdir build
 
 # Configure with CMake for macOS target
 cmake -S . -B build \
@@ -90,6 +93,46 @@ cmake --build build --config Release
 ```
 
 The macOS app bundle will be available at `build/bin/LongView.app`
+
+### Experimental: Windows Cross-Compilation from Linux
+
+> **Note**: This method is experimental and may not produce a perfect build. It's strongly recommended to use the native Windows build process when possible.
+
+To cross-compile for Windows from Linux:
+
+1. Run the Windows cross-compilation Docker container:
+```bash
+docker run -it --rm -v $(pwd):/app qt6-dev-windows-cross
+```
+
+2. Inside the container, build the application:
+```bash
+# Clean previous build artifacts
+rm -rf build && mkdir build
+
+# Configure the project
+cmake -S . -B build \
+  -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain-mingw64.cmake \
+  -DCMAKE_BUILD_TYPE=Release
+
+# Build the application
+cmake --build build --parallel
+```
+
+The output `.exe` file will be available at: `build/bin/`
+
+3. After cross-compilation, bundle `.exe` with required DLLs
+
+Run the helper script inside the container to collect DLLs and package everything:
+
+```bash
+package-dlls.sh
+```
+
+The complete archive `.tar.gz` will be created at: `build/`
+
+You can extract and run this bundle directly on Windows without installation.
 
 ## License
 
