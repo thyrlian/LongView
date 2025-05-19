@@ -48,6 +48,21 @@ docker build -t qt6-dev-windows-cross -f docker/windows/Dockerfile docker/window
 ./build.sh --target=macos
 
 # Build for Windows (in Windows native environment with Qt + MSVC - RECOMMENDED)
+# Prerequisite of installation:
+#   * Git for Windows
+#   * Qt 6 for MSVC
+#   * Visual Studio with CMake and Ninja components
+# Right-click inside the project folder → choose “Open Git Bash here”
+# Git Configuration for Line Endings
+# Make sure your Git client is properly configured to avoid CRLF conversion issues:
+# git config --global core.autocrlf input
+# Set PATH environment variables
+# vi ~/.bashrc
+# Add the following lines:
+# export PATH="$PATH:/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin"
+# export PATH="$PATH:/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja"
+# Then reload:
+# source ~/.bashrc
 ./build.sh --target=windows
 
 # Build with cleaning previous build artifacts
