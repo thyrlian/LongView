@@ -15,27 +15,34 @@ set(PROJECT_SOURCES
     appintegration.cpp
 )
 
+# macOS icon
 set(ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/macOS/icon.icns")
 
+# Windows: Add .rc file for application icon
+if(WIN32)
+    list(APPEND PROJECT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/assets/Windows/windows_app_icon.rc")
+endif()
+
+# Create the executable
 qt_add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${ICON_PATH}
 )
 
-# Correctly link to Qt libraries
+# Link to Qt libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
 )
 
-# Set properties for macOS and Windows
+# Set target properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
 )
 
-# Set the macOS application icon
+# macOS icon packaging
 set(MACOSX_BUNDLE_ICON_FILE icon.icns)
 set_source_files_properties(${ICON_PATH} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources"
