@@ -161,22 +161,79 @@ EOFAPPRUN
         echo "--- Starting native Windows build ---"
 
         SRC_DIR="${PWD}/src"
-        BUILD_SUBDIR="${BUILD_DIR}/windows"
-        DIST_SUBDIR="${DIST_DIR}/windows"
+        BUILD_SUBDIR="${PWD}/${BUILD_DIR}/windows"
+        DIST_SUBDIR="${PWD}/${DIST_DIR}/windows"
 
+        rm -rf "$BUILD_SUBDIR"
         mkdir -p "$BUILD_SUBDIR"
         mkdir -p "$DIST_SUBDIR"
 
         cd "$BUILD_SUBDIR"
 
-        echo "--- Configuring CMake with MSVC or local Qt ---"
-        cmake "$SRC_DIR" -DCMAKE_BUILD_TYPE=Release
+        echo "--- Locating Qt6 installation ---"
+        QT_CMAKE_DIR=$(find /c/Qt/6.* -type d -path "*/msvc*/lib" -exec test -d "{}/cmake/Qt6" ';' -print -quit 2>/dev/null | sed 's:/lib$::')
+
+        if [ -z "$QT_CMAKE_DIR" ]; then
+            echo "❌ Could not find a suitable Qt6 installation under C:/Qt"
+            echo "Please install Qt6 for MSVC (e.g., C:/Qt/6.8.3/msvc2022_64) or set CMAKE_PREFIX_PATH manually."
+            exit 1
+        fi
+
+        echo "✅ Found Qt installation: $QT_CMAKE_DIR"
+
+        echo "--- Detecting available Visual Studio ---"
+
+        VSWHERE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+        if [ ! -f "$VSWHERE_PATH" ]; then
+            echo "❌ vswhere.exe not found at $VSWHERE_PATH"
+            echo "Please install or ensure Visual Studio Installer exists."
+            exit 1
+        fi
+
+        VS_GENERATOR=$(
+          "$VSWHERE_PATH" -latest -requires Microsoft.Component.MSBuild \
+            -property installationVersion | grep -Eo '^[0-9]+' | head -1 | awk '{
+              if ($1 == 17) print "Visual Studio 17 2022";
+              else if ($1 == 16) print "Visual Studio 16 2019";
+              else if ($1 == 15) print "Visual Studio 15 2017";
+              else print "";
+            }'
+        )
+
+        if [ -z "$VS_GENERATOR" ]; then
+            echo "❌ Could not detect a supported Visual Studio version via vswhere"
+            exit 1
+        fi
+
+        echo "✅ Detected Visual Studio Generator: $VS_GENERATOR"
+
+        echo "--- Configuring CMake with Visual Studio Generator ---"
+        cmake "$SRC_DIR" \
+          -G "$VS_GENERATOR" \
+          -A x64 \
+          -DCMAKE_PREFIX_PATH="$(cygpath -m "$QT_CMAKE_DIR")" \
+          -DCMAKE_CONFIGURATION_TYPES="Release" \
+          -DCMAKE_BUILD_TYPE=Release
 
         echo "--- Building application ---"
-        cmake --build . --parallel
+        cmake --build . --config Release --parallel
 
         echo "--- Copying build artifacts ---"
-        cp "${APP_NAME}.exe" "$DIST_SUBDIR/" || echo "Warning: EXE not found"
+        cp "Release/${APP_NAME}.exe" "$DIST_SUBDIR/" || echo "Warning: EXE not found"
+
+        echo "--- Searching for windeployqt ---"
+        QT_BIN_DIR="$(find /c/Qt/6.* -type f -name windeployqt.exe -path "*/msvc*/bin/windeployqt.exe" -print -quit | sed 's:/windeployqt.exe$::')"
+
+        if [ -z "$QT_BIN_DIR" ]; then
+            echo "❌ Could not locate windeployqt.exe"
+            echo "Please ensure Qt for MSVC is installed under C:/Qt/*"
+            exit 1
+        fi
+
+        echo "✅ Found windeployqt in: $QT_BIN_DIR"
+
+        echo "--- Running windeployqt to bundle Qt dependencies ---"
+        "$QT_BIN_DIR/windeployqt.exe" "$(cygpath -w "$DIST_SUBDIR/${APP_NAME}.exe")"
 
         cd - > /dev/null
 
