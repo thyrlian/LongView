@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-dev \
     git \
     wget \
+    libyaml-cpp-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Qt dependencies

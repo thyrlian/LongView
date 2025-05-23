@@ -7,12 +7,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Qt modules you use
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
+# Find yaml-cpp using pkg-config
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
+include_directories(${YAML_CPP_INCLUDE_DIRS})
+link_directories(${YAML_CPP_LIBRARY_DIRS})
+
 set(PROJECT_SOURCES
     main.cpp
     windowutils.h
     windowutils.cpp
     appintegration.h
     appintegration.cpp
+    config/config_manager.h
+    config/config_manager.cpp
+    config/config.h
 )
 
 # macOS icon
@@ -34,6 +43,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    ${YAML_CPP_LIBRARIES}
 )
 
 # Set target properties

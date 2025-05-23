@@ -25,8 +25,9 @@ RUN apt-get update && \
     curl \
     wget \
     unzip \
-    ca-certificates && \
-    apt-get clean && \
+    ca-certificates \
+    libyaml-cpp-dev \
+    && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Qt6 host libraries for native build tools (e.g. moc, rcc)
