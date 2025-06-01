@@ -26,7 +26,6 @@ RUN apt-get update && \
     wget \
     unzip \
     ca-certificates \
-    libyaml-cpp-dev \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -35,8 +34,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     qt6-base-dev \
     qt6-tools-dev \
-    qt6-tools-dev-tools && \
-    apt-get clean && \
+    qt6-tools-dev-tools \
+    && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install system dependencies required to build Qt host (including QtWebEngine)
@@ -87,8 +86,8 @@ RUN apt-get update && \
     nodejs \
     python3-html5lib \
     clang \
-    libclang-dev && \
-    apt-get clean && \
+    libclang-dev \
+    && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the Qt version
@@ -174,6 +173,13 @@ RUN rm -rf /opt/qt/build-* ${QT_SOURCE_DIR}
 # Copy helper script for packaging
 COPY package-dlls.sh /usr/local/bin/package-dlls.sh
 RUN chmod +x /usr/local/bin/package-dlls.sh
+
+# Install application specific dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libyaml-cpp-dev \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app

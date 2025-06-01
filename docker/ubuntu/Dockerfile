@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-dev \
     git \
     wget \
-    libyaml-cpp-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Qt dependencies
 RUN apt-get update && apt-get install -y \
@@ -63,6 +63,13 @@ RUN mkdir -p /opt/appimage && \
     ./appimagetool-x86_64.AppImage --appimage-extract && \
     mv squashfs-root appimagetool && \
     ln -s /opt/appimage/appimagetool/AppRun /usr/local/bin/appimagetool
+
+# Install application specific dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libyaml-cpp-dev \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app

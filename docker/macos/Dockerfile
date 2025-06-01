@@ -45,7 +45,6 @@ RUN apt-get update && \
     python3 \
     python3-pip \
     python3-venv \
-    libyaml-cpp-dev \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -97,6 +96,13 @@ RUN mkdir -p ${QT_MACOS_DIR} && \
 ENV Qt6_DIR=${QT_MACOS_DIR}/${QT_VERSION}/macos/lib/cmake/Qt6
 ENV CMAKE_PREFIX_PATH=${Qt6_DIR}
 ENV PATH=${QT_MACOS_DIR}/${QT_VERSION}/macos/bin:$PATH
+
+# Install application specific dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libyaml-cpp-dev \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
