@@ -1,9 +1,10 @@
 #pragma once
 
 #include "config.h"
+#include "config_parser.h"
+#include "config_exceptions.h"
 #include <string>
-#include <stdexcept>
-#include <yaml-cpp/yaml.h>
+#include <memory>
 
 namespace LongView {
 namespace Config {
@@ -28,69 +29,16 @@ public:
     
     // Update configuration
     void updateConfiguration(const Configuration& config);
-    
-    // Validate configuration
-    void validateConfiguration() const;
 
 private:
     // Private constructor for singleton
-    ConfigManager() = default;
+    ConfigManager();
     
-    // Current configuration
-    Configuration currentConfig_;
+    // Configuration
+    Configuration config_;
     
-    // Internal validation methods
-    void validateVersion(const std::string& version) const;
-    void validateGroup(const Group& group) const;
-    void validateItem(const Item& item) const;
-
-    // Internal loading methods
-    Item loadAndValidateItem(const YAML::Node& itemNode) const;
-
-    // Internal saving methods
-    YAML::Node saveItemToNode(const Item& item) const;
-};
-
-// Base exception class for all configuration errors
-class ConfigException : public std::runtime_error {
-public:
-    explicit ConfigException(const std::string& message)
-        : std::runtime_error(message) {}
-};
-
-// File not found exception
-class ConfigFileNotFoundException : public ConfigException {
-public:
-    explicit ConfigFileNotFoundException(const std::string& filePath)
-        : ConfigException("Configuration file does not exist: " + filePath) {}
-};
-
-// Empty file exception
-class ConfigFileEmptyException : public ConfigException {
-public:
-    explicit ConfigFileEmptyException(const std::string& filePath)
-        : ConfigException("Configuration file is empty: " + filePath) {}
-};
-
-// YAML parsing exception
-class ConfigParseException : public ConfigException {
-public:
-    explicit ConfigParseException(const std::string& message)
-        : ConfigException("Failed to parse YAML file: " + message) {}
-};
-
-// File access exception
-class ConfigFileAccessException : public ConfigException {
-public:
-    explicit ConfigFileAccessException(const std::string& message)
-        : ConfigException("Failed to access configuration file: " + message) {}
-};
-
-// File writing exception
-class ConfigWriteException : public ConfigException {
-public:
-    explicit ConfigWriteException(const std::string& message)
-        : ConfigException("Failed to write file: " + message) {}
+    // Parser instance
+    std::unique_ptr<IConfigParser> parser_;
 };
 
 } // namespace Config

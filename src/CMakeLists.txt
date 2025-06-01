@@ -22,6 +22,11 @@ set(PROJECT_SOURCES
     config/config_manager.h
     config/config_manager.cpp
     config/config.h
+    config/config_parser.h
+    config/config_parser.cpp
+    config/yaml_config_parser.h
+    config/yaml_config_parser.cpp
+    config/config_exceptions.h
 )
 
 # macOS icon
