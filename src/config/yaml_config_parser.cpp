@@ -5,6 +5,55 @@
 namespace LongView {
 namespace Config {
 
+void YamlConfigParser::trackNode(const std::string& type, const std::string& name, const YAML::Node& node) const {
+    lastParsedNode_ = {
+        type,
+        name,
+        static_cast<size_t>(node.Mark().line + 1),  // YAML line numbers are 0-based
+        node.as<std::string>()
+    };
+}
+
+void YamlConfigParser::handleParseError(const std::string& context, const YAML::Node& node, const std::exception& e, bool addLastParsedInfo) const {
+    std::stringstream ss;
+    
+    // Get the original error message without any redundant prefixes
+    std::string errorMsg = e.what();
+    const std::string prefix = "Failed to parse configuration file: ";
+    size_t prefixPos = errorMsg.find(prefix);
+    while (prefixPos != std::string::npos) {
+        errorMsg = errorMsg.substr(prefixPos + prefix.length());
+        prefixPos = errorMsg.find(prefix);
+    }
+    
+    // Handle line number display
+    int lineNumber = node.Mark().line + 1;
+    if (lineNumber > 0) {
+        // If the error message already contains line information, just use it
+        if (errorMsg.find("at line") != std::string::npos) {
+            ss << errorMsg;
+        } else {
+            ss << "Error parsing " << context << " at line " << lineNumber << ": " << errorMsg;
+        }
+    } else {
+        ss << "Error parsing " << context << ": " << errorMsg;
+    }
+    
+    // Add last successfully parsed node info if available and requested
+    if (addLastParsedInfo && lastParsedNode_.lineNumber > 0) {
+        // Only show last parsed info if it's different from the current error location
+        if (lastParsedNode_.lineNumber != static_cast<size_t>(lineNumber)) {
+            ss << "\nLast successfully parsed: " << lastParsedNode_.nodeType;
+            if (!lastParsedNode_.nodeName.empty()) {
+                ss << " '" << lastParsedNode_.nodeName << "'";
+            }
+            ss << " at line " << lastParsedNode_.lineNumber;
+        }
+    }
+    
+    throw ConfigParseException(ss.str());
+}
+
 Configuration YamlConfigParser::parseFromString(const std::string& content) {
     try {
         YAML::Node node = YAML::Load(content);
@@ -16,12 +65,17 @@ Configuration YamlConfigParser::parseFromString(const std::string& content) {
         }
         config.version = node["version"].as<std::string>();
         validateVersion(config.version);
+        trackNode("version", "version", node["version"]);
         
         // Parse groups
         if (node["groups"]) {
             config.groups = std::vector<Group>();
             for (const auto& groupNode : node["groups"]) {
-                config.groups->push_back(parseGroup(groupNode));
+                try {
+                    config.groups->push_back(parseGroup(groupNode));
+                } catch (const ConfigException& e) {
+                    handleParseError("group", groupNode, e, false);  // Don't add last parsed info here
+                }
             }
         }
         
@@ -29,13 +83,18 @@ Configuration YamlConfigParser::parseFromString(const std::string& content) {
         if (node["items"]) {
             config.items = std::vector<Item>();
             for (const auto& itemNode : node["items"]) {
-                config.items->push_back(parseItem(itemNode));
+                try {
+                    config.items->push_back(parseItem(itemNode));
+                } catch (const ConfigException& e) {
+                    handleParseError("item", itemNode, e, false);  // Don't add last parsed info here
+                }
             }
         }
         
         return config;
     } catch (const YAML::Exception& e) {
-        throw ConfigParseException(e.what());
+        handleParseError("configuration", YAML::Node(), e, true);  // Add last parsed info for YAML errors
+        return Configuration();  // This line will never be reached due to the throw in handleParseError
     }
 }
 
@@ -93,11 +152,17 @@ Group YamlConfigParser::parseGroup(const YAML::Node& node) const {
     
     if (node["name"]) {
         group.name = node["name"].as<std::string>();
+        trackNode("group", *group.name, node["name"]);
     }
     
     if (node["items"]) {
         for (const auto& itemNode : node["items"]) {
-            group.items.push_back(parseItem(itemNode));
+            try {
+                group.items.push_back(parseItem(itemNode));
+            } catch (const ConfigException& e) {
+                std::string context = "item in group '" + (group.name ? *group.name : "unnamed") + "'";
+                handleParseError(context, itemNode, e, true);  // Add last parsed info at the innermost level
+            }
         }
     }
     
@@ -127,6 +192,7 @@ Item YamlConfigParser::parseItem(const YAML::Node& node) const {
     // Parse name
     if (node["name"]) {
         item.name = node["name"].as<std::string>();
+        trackNode("item", *item.name, node["name"]);
     }
 
     // Parse type

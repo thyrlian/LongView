@@ -23,6 +23,19 @@ private:
     void validateItem(const Item& item) const;
     void validateGroup(const Group& group) const;
     void validateVersion(const std::string& version) const;
+
+    // Track last successfully parsed node
+    struct LastParsedNode {
+        std::string nodeType;  // "item", "group", "version", etc.
+        std::string nodeName;  // Name of the node if available
+        size_t lineNumber;     // Line number in the YAML file
+        std::string content;   // Content of the node
+    };
+    mutable LastParsedNode lastParsedNode_;
+
+    // Helper methods for tracking and error handling
+    void trackNode(const std::string& type, const std::string& name, const YAML::Node& node) const;
+    void handleParseError(const std::string& context, const YAML::Node& node, const std::exception& e, bool addLastParsedInfo = true) const;
 };
 
 } // namespace Config

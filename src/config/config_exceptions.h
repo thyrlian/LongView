@@ -31,7 +31,7 @@ public:
 class ConfigParseException : public ConfigException {
 public:
     explicit ConfigParseException(const std::string& message)
-        : ConfigException("Failed to parse configuration file: " + message) {}
+        : ConfigException(message) {}
 };
 
 // File access exception
