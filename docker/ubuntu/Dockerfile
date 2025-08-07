@@ -68,6 +68,11 @@ RUN mkdir -p /opt/appimage && \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libyaml-cpp-dev \
+    pkg-config \
+    libxkbcommon-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    libvulkan-dev \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
