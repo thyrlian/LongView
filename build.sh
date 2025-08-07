@@ -116,6 +116,10 @@ case "$PLATFORM" in
                 cp /app/src/assets/icons/Linux/icon.png \$APPDIR/longview.png
                 ln -sf longview.png \$APPDIR/.DirIcon
                 
+                # Copy yaml-cpp library
+                mkdir -p \$APPDIR/usr/lib
+                find /usr/lib -name "libyaml-cpp.so*" -exec cp {} \$APPDIR/usr/lib/ \; 2>/dev/null || true
+                
                 # Modify .desktop files to use AppRun
                 sed -i 's|Exec=.*|Exec=AppRun|g' \$APPDIR/longview.desktop
                 sed -i 's|Exec=.*|Exec=AppRun|g' \$APPDIR/usr/applications/longview.desktop
