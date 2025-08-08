@@ -27,6 +27,9 @@ set(PROJECT_SOURCES
     config/yaml_config_parser.h
     config/yaml_config_parser.cpp
     config/config_exceptions.h
+    tiles/base/tile.h
+    tiles/base/tile.cpp
+    resources.qrc
 )
 
 # macOS icon
@@ -37,10 +40,16 @@ if(WIN32)
     list(APPEND PROJECT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/assets/Windows/windows_app_icon.rc")
 endif()
 
-# Create the executable
+# Create the main executable
 qt_add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
     ${ICON_PATH}
+)
+
+# Enable MOC for the target
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    AUTOMOC ON
+    AUTOUIC ON
 )
 
 # Link to Qt libraries
