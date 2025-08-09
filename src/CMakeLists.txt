@@ -29,6 +29,8 @@ set(PROJECT_SOURCES
     config/config_exceptions.h
     tiles/base/tile.h
     tiles/base/tile.cpp
+    tiles/item/item_tile.h
+    tiles/item/item_tile.cpp
     resources.qrc
 )
 
