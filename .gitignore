@@ -66,3 +66,6 @@ compile_commands.json
 
 # macOS SDK
 *MacOSX*.sdk*.tar.xz
+
+# VSCode
+.vscode/
