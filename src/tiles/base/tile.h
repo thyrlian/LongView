@@ -37,7 +37,7 @@ protected:
     static constexpr int kDefaultWidth = 360;
     static constexpr int kDefaultHeight = 240;
     static constexpr int kMinWidth = 200;
-    static constexpr int kMinHeight = 120;
+    static constexpr int kMinHeight = 200;
 
 public:
     enum class Kind { Item, Group };
@@ -51,8 +51,8 @@ public:
     Kind kind() const { return m_kind; }
     
     // Core tile methods
-    void setExpanded(bool expanded);
-    void setCompleted(bool completed);
+    void setExpanded(bool expanded, bool silent = false);
+    void setCompleted(bool completed, bool silent = false);
     void toggleExpanded();
     
     // Title interface
@@ -72,7 +72,7 @@ public:
     QWidget* contentWidget() const;
     
     // Virtual interface for subclasses
-    virtual void refresh() = 0;
+    virtual void refresh() {} // Optional override for subclasses
     
     // Event handling
     void changeEvent(QEvent* e) override;

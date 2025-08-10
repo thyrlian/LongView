@@ -6,7 +6,7 @@
 namespace LongView {
 namespace Tiles {
 
-class ItemTile : public Tile {
+class ItemTile final : public Tile {
     Q_OBJECT
     Q_DISABLE_COPY(ItemTile)
 
@@ -22,7 +22,7 @@ private:
     void buildContent();
     void applyOptionalProperties();
 
-    LongView::Config::Item m_item;
+    const LongView::Config::Item m_item;
 };
 
 } // namespace Tiles

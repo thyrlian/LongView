@@ -31,6 +31,8 @@ set(PROJECT_SOURCES
     tiles/base/tile.cpp
     tiles/item/item_tile.h
     tiles/item/item_tile.cpp
+    tiles/group/group_tile.h
+    tiles/group/group_tile.cpp
     resources.qrc
 )
 

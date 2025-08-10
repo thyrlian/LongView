@@ -150,6 +150,10 @@ EOFAPPRUN
                 
                 echo '--- AppImage created at \$OUTPUT_APPIMAGE ---'
                 ls -la /output/
+                
+                # Copy test executable to output directory
+                cp './${APP_NAME}Test' /output/
+                echo '--- Test executable copied to output ---'
             "
         
         echo "--- Linux build completed ---"

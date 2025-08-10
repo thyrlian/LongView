@@ -110,22 +110,31 @@ void Tile::updateUI()
     }
 }
 
-void Tile::setExpanded(bool expanded)
+void Tile::setExpanded(bool expanded, bool silent)
 {
     if (m_expanded != expanded) {
         m_expanded = expanded;
-        updateUI();
-        emit expandedChanged(expanded);
+        if (!silent) {
+            updateUI();
+            emit expandedChanged(expanded);
+        }
     }
 }
 
-void Tile::setCompleted(bool completed)
+void Tile::setCompleted(bool completed, bool silent)
 {
     if (m_completed != completed) {
         m_completed = completed;
-        updateUI();
-        emit completedChanged(completed);
+        if (!silent) {
+            updateUI();
+            emit completedChanged(completed);
+        }
     }
+}
+
+void Tile::toggleExpanded()
+{
+    setExpanded(!m_expanded);
 }
 
 void Tile::setTitle(const QString& title)
@@ -171,11 +180,6 @@ QWidget* Tile::contentWidget() const
 void Tile::onExpandButtonClicked()
 {
     toggleExpanded();
-}
-
-void Tile::toggleExpanded()
-{
-    setExpanded(!m_expanded);
 }
 
 void Tile::loadStyleSheet()
