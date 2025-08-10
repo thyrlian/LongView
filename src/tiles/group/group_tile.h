@@ -3,6 +3,8 @@
 #include "../base/tile.h"
 #include "../../config/config.h"
 #include <vector>
+#include <QScrollArea>
+#include <QFrame>
 
 // Forward declarations
 class QVBoxLayout;
@@ -37,6 +39,8 @@ public:
     
     // Override Tile methods
     void refresh() override;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 private slots:
     void onItemTileExpandedChanged(bool expanded);

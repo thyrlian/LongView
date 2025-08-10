@@ -7,6 +7,8 @@
 #include <QString>
 #include <algorithm>
 #include <optional>
+#include <QScrollArea>
+#include <QFrame>
 
 namespace LongView {
 namespace Tiles {
@@ -15,6 +17,10 @@ namespace {
     constexpr int kItemSpacing = 8;
     constexpr int kGroupMargin = 12;
     constexpr int kPlaceholderPadding = 20;
+    
+    // Size calculation constants
+    constexpr int kHeaderHeight = 20;
+    constexpr int kPlaceholderHeight = 40;
     
     // Utility function to safely convert optional string to QString
     static inline QString optName(const std::optional<std::string>& n) {
@@ -59,8 +65,15 @@ GroupTile::GroupTile(const Config::Group& group, QWidget* parent)
 
 void GroupTile::buildContent()
 {
+    // Create scroll area for items container
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    
     // Create container widget for items
-    auto* container = new QWidget(this);
+    auto* container = new QWidget(scrollArea);
     m_itemsLayout = new QVBoxLayout(container);
     m_itemsLayout->setContentsMargins(kGroupMargin, kGroupMargin, kGroupMargin, kGroupMargin);
     m_itemsLayout->setSpacing(kItemSpacing);
@@ -86,10 +99,20 @@ void GroupTile::buildContent()
     m_itemsPlaceholder->setStyleSheet(QString("color: #888; padding: %1px;").arg(kPlaceholderPadding));
     m_itemsLayout->addWidget(m_itemsPlaceholder);
     
-    setContentWidget(container);
+    // Set the container as the scroll area's widget
+    scrollArea->setWidget(container);
+    
+    // Set the scroll area as the content widget
+    setContentWidget(scrollArea);
     
     // Critical fix: ensure content container visibility is correctly set
     container->setVisible(true);
+    
+    // Set size policies for better height adaptation
+    // Use MinimumExpanding for height to prevent compression
+    container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+    scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+    this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
     
     // Set tooltip with group information
     const auto tooltip = tr("Group: %1\nItems: %2\nType: %3")
@@ -292,6 +315,19 @@ void GroupTile::updateHeaderCount()
     m_headerInfo->setText(tr("Group: %1\nItems: %2")
                           .arg(optName(m_group.name))
                           .arg(m_itemTiles.size()));
+}
+
+QSize GroupTile::sizeHint() const
+{
+    // With QScrollArea, we can use a fixed height for the group tile
+    // The content will scroll internally if needed
+    return QSize(Tile::kDefaultWidth, Tile::kDefaultHeight);
+}
+
+QSize GroupTile::minimumSizeHint() const
+{
+    // Use the base tile's minimum size
+    return QSize(Tile::kMinWidth, Tile::kMinHeight);
 }
 
 } // namespace Tiles
