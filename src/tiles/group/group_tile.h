@@ -3,8 +3,6 @@
 #include "../base/tile.h"
 #include "../../config/config.h"
 #include <vector>
-#include <QScrollArea>
-#include <QFrame>
 
 // Forward declarations
 class QVBoxLayout;
@@ -57,12 +55,21 @@ private:
     void updateExpandButtonState();
     void updateHeaderCount();
     void updateGroupCompletionState();
+    
+    // Updated method signature - removed fromUser parameter
+    void syncCompletionToItems(bool completed);
 
     const Config::Group m_group;
     std::vector<ItemTile*> m_itemTiles;
     QVBoxLayout* m_itemsLayout = nullptr;
     QLabel* m_headerInfo = nullptr;
     QLabel* m_itemsPlaceholder = nullptr;
+    
+    // Add flag to prevent re-entrant completion updates
+    bool m_updatingCompletion = false;
+    
+    // Track last item count to avoid unnecessary header updates
+    size_t m_lastItemCount = 0;
     
     Q_DISABLE_COPY(GroupTile)
 };

@@ -230,5 +230,14 @@ void Tile::onCompletionCheckBoxChanged(int state)
     setCompleted(state == Qt::Checked);
 }
 
+void Tile::updateCompletionUI()
+{
+    // Update completion checkbox UI without triggering signals
+    if (m_completionCheckBox) {
+        QSignalBlocker blocker(m_completionCheckBox);
+        m_completionCheckBox->setChecked(m_completed);
+    }
+}
+
 } // namespace Tiles
 } // namespace LongView

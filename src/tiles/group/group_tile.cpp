@@ -9,6 +9,7 @@
 #include <optional>
 #include <QScrollArea>
 #include <QFrame>
+#include <QSizePolicy>
 
 namespace LongView {
 namespace Tiles {
@@ -17,10 +18,6 @@ namespace {
     constexpr int kItemSpacing = 8;
     constexpr int kGroupMargin = 12;
     constexpr int kPlaceholderPadding = 20;
-    
-    // Size calculation constants
-    constexpr int kHeaderHeight = 20;
-    constexpr int kPlaceholderHeight = 40;
     
     // Utility function to safely convert optional string to QString
     static inline QString optName(const std::optional<std::string>& n) {
@@ -31,6 +28,7 @@ namespace {
 GroupTile::GroupTile(const Config::Group& group, QWidget* parent)
     : Tile(Kind::Group, parent)
     , m_group(group)
+    , m_updatingCompletion(false)
 {
     const QString title = m_group.name ? QString::fromStdString(*m_group.name) : tr("Group");
     setTitle(title);
@@ -53,16 +51,20 @@ GroupTile::GroupTile(const Config::Group& group, QWidget* parent)
     // Connect group completion change to sync with children
     // Use signal blocking to prevent re-entrant calls during synchronization
     connect(this, &Tile::completedChanged, this, [this](bool completed) {
-        // Block signals temporarily to prevent re-entrant calls
-        QSignalBlocker blocker(this);
-        
-        for (auto* itemTile : m_itemTiles) {
-            // Block child signals to prevent re-entrant calls
-            QSignalBlocker childBlocker(itemTile);
-            // Only set if state is different to avoid unnecessary signals
-            if (itemTile->isCompleted() != completed) {
-                itemTile->setCompleted(completed);
-            }
+        // Only sync to items if this change came from user interaction
+        // (not from automatic updates based on children)
+        if (!m_updatingCompletion) {
+            syncCompletionToItems(completed);
+        }
+    });
+    
+    // Connect group expansion change to sync with children
+    // When group is expanded/collapsed, expand/collapse all child items accordingly
+    connect(this, &Tile::expandedChanged, this, [this](bool expanded) {
+        if (expanded) {
+            expandAllItems();
+        } else {
+            collapseAllItems();
         }
     });
 }
@@ -135,7 +137,7 @@ void GroupTile::buildContent()
 /**
  * @brief Add an ItemTile to this group
  * 
- * Takes ownership of the itemTile and sets it as a child of this GroupTile.
+ * Takes ownership via parent-child hierarchy (parented to the internal container).
  * The itemTile will be automatically deleted when removed or when this GroupTile is destroyed.
  * 
  * @param itemTile The ItemTile to add (must not be nullptr)
@@ -237,6 +239,9 @@ void GroupTile::populateFromConfig()
         auto* tile = new ItemTile(item, this);
         addItemTile(tile);
     }
+    
+    // Initialize m_lastItemCount and sync header/tooltip with actual item count
+    updateHeaderCount();
 }
 
 void GroupTile::refresh()
@@ -258,6 +263,22 @@ void GroupTile::setupItemTileConnections(ItemTile* itemTile)
             this, &GroupTile::onItemTileExpandedChanged, Qt::UniqueConnection);
     connect(itemTile, &ItemTile::completedChanged, 
             this, &GroupTile::onItemTileCompletedChanged, Qt::UniqueConnection);
+    
+    // Listen for destroyed signal to automatically remove from m_itemTiles
+    // This prevents dangling pointers if external code manually deletes an ItemTile
+    connect(itemTile, &QObject::destroyed, this, [this](QObject* obj){
+        auto* tile = static_cast<ItemTile*>(obj);
+        auto it = std::find(m_itemTiles.begin(), m_itemTiles.end(), tile);
+        if (it != m_itemTiles.end()) {
+            m_itemTiles.erase(it);
+            updateHeaderCount();
+            updateGroupCompletionState();
+            // Show placeholder if this was the last item
+            if (m_itemTiles.empty() && m_itemsPlaceholder) {
+                m_itemsPlaceholder->setVisible(true);
+            }
+        }
+    });
 }
 
 void GroupTile::disconnectItemTile(ItemTile* itemTile)
@@ -277,16 +298,22 @@ void GroupTile::onItemTileExpandedChanged(bool expanded)
 void GroupTile::onItemTileCompletedChanged(bool completed)
 {
     Q_UNUSED(completed);
-    // Update group completion state
+    // Update group completion state based on children
+    // This is called when any child item's completion state changes
     updateGroupCompletionState();
 }
 
 void GroupTile::updateGroupCompletionState()
 {
+    // Prevent re-entrant calls during completion updates
+    if (m_updatingCompletion) return;
+    
     if (m_itemTiles.empty()) {
-        // Only set if state is different to avoid unnecessary signals
+        // Empty group is always incomplete
         if (isCompleted() != false) {
+            m_updatingCompletion = true;
             setCompleted(false);
+            m_updatingCompletion = false;
         }
         return;
     }
@@ -302,8 +329,35 @@ void GroupTile::updateGroupCompletionState()
     
     // Only update if state is different to avoid unnecessary signals
     if (isCompleted() != allCompleted) {
+        m_updatingCompletion = true;
         setCompleted(allCompleted);
+        m_updatingCompletion = false;
     }
+}
+
+void GroupTile::syncCompletionToItems(bool completed)
+{
+    // Prevent re-entrant calls
+    if (m_updatingCompletion) return;
+    
+    m_updatingCompletion = true;
+    
+    // Sync completion state to all child items
+    for (auto* itemTile : m_itemTiles) {
+        // Use silent mode to prevent triggering item's completionChanged signal
+        // which would call updateGroupCompletionState() again
+        if (itemTile->isCompleted() != completed) {
+            itemTile->setCompleted(completed, true);
+        }
+    }
+    
+    // Force UI update for all child items to immediately reflect the changes
+    for (auto* itemTile : m_itemTiles) {
+        // Update the completion checkbox UI state without triggering signals
+        itemTile->updateCompletionUI();
+    }
+    
+    m_updatingCompletion = false;
 }
 
 void GroupTile::updateExpandButtonState()
@@ -316,9 +370,23 @@ void GroupTile::updateExpandButtonState()
 void GroupTile::updateHeaderCount()
 {
     if (!m_headerInfo) return;
+    
+    const size_t currentCount = m_itemTiles.size();
+    
+    // Skip update if item count hasn't changed (micro-optimization)
+    if (currentCount == m_lastItemCount) return;
+    
+    m_lastItemCount = currentCount;
+    
     m_headerInfo->setText(tr("Group: %1\nItems: %2")
                           .arg(optName(m_group.name))
-                          .arg(m_itemTiles.size()));
+                          .arg(currentCount));
+    
+    // Synchronize tooltip with current item count
+    setToolTip(tr("Group: %1\nItems: %2\nType: %3")
+               .arg(optName(m_group.name))
+               .arg(currentCount)
+               .arg(tr("n/a")));
 }
 
 QSize GroupTile::sizeHint() const
@@ -336,10 +404,8 @@ QSize GroupTile::minimumSizeHint() const
 
 void GroupTile::expandAllItems()
 {
-    // First expand the group itself
-    setExpanded(true);
-    
-    // Then expand all child ItemTiles
+    // Expand all child ItemTiles only
+    // Group expansion state is managed externally via expandedChanged signal
     for (auto* itemTile : m_itemTiles) {
         itemTile->setExpanded(true);
     }
@@ -347,11 +413,8 @@ void GroupTile::expandAllItems()
 
 void GroupTile::collapseAllItems()
 {
-    // First collapse the group itself
-    setExpanded(false);
-    
-    // Optionally collapse all child ItemTiles too
-    // (though they won't be visible when group is collapsed)
+    // Collapse all child ItemTiles only
+    // Group expansion state is managed externally via expandedChanged signal
     for (auto* itemTile : m_itemTiles) {
         itemTile->setExpanded(false);
     }

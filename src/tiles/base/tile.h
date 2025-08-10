@@ -81,6 +81,9 @@ public:
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
+    // New method to update completion UI without triggering signals
+    void updateCompletionUI();
+
 signals:
     void expandedChanged(bool expanded);
     void completedChanged(bool completed);
