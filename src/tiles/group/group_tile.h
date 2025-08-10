@@ -34,6 +34,10 @@ public:
     void clearItemTiles();
     void populateFromConfig();
     
+    // New methods for recursive expansion control
+    void expandAllItems();
+    void collapseAllItems();
+    
     const Config::Group& group() const { return m_group; }
     const std::vector<ItemTile*>& itemTiles() const { return m_itemTiles; }
     

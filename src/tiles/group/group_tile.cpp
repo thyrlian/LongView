@@ -43,6 +43,10 @@ GroupTile::GroupTile(const Config::Group& group, QWidget* parent)
     // Populate items from config AFTER building content
     populateFromConfig();
     
+    // NEW: Recursively expand all child ItemTiles by default
+    // This should be called after populateFromConfig() to ensure all items are created
+    expandAllItems();
+    
     // Force UI update to ensure content is visible after setting expanded state
     updateUI();
     
@@ -328,6 +332,29 @@ QSize GroupTile::minimumSizeHint() const
 {
     // Use the base tile's minimum size
     return QSize(Tile::kMinWidth, Tile::kMinHeight);
+}
+
+void GroupTile::expandAllItems()
+{
+    // First expand the group itself
+    setExpanded(true);
+    
+    // Then expand all child ItemTiles
+    for (auto* itemTile : m_itemTiles) {
+        itemTile->setExpanded(true);
+    }
+}
+
+void GroupTile::collapseAllItems()
+{
+    // First collapse the group itself
+    setExpanded(false);
+    
+    // Optionally collapse all child ItemTiles too
+    // (though they won't be visible when group is collapsed)
+    for (auto* itemTile : m_itemTiles) {
+        itemTile->setExpanded(false);
+    }
 }
 
 } // namespace Tiles
