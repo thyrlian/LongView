@@ -34,6 +34,9 @@ GroupTile::GroupTile(const Config::Group& group, QWidget* parent)
     
     buildContent();
     
+    // Populate items from config AFTER building content
+    populateFromConfig();
+    
     // Force UI update to ensure content is visible after setting expanded state
     updateUI();
     
